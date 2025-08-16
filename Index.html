@@ -1,0 +1,213 @@
+# task-list-app-v1.0.2
+import React, { useState } from 'react';
+import { Plus, Edit2, Trash2, Check, X, Save } from 'lucide-react';
+
+export default function EditableTaskList() {
+  const [tasks, setTasks] = useState([
+    { id: 1, text: 'Exemplo de tarefa', completed: false, editing: false },
+    { id: 2, text: 'Clique no ícone de editar para modificar', completed: true, editing: false }
+  ]);
+  const [newTask, setNewTask] = useState('');
+  const [editingText, setEditingText] = useState('');
+
+  const addTask = () => {
+    if (newTask.trim() !== '') {
+      setTasks([...tasks, {
+        id: Date.now(),
+        text: newTask,
+        completed: false,
+        editing: false
+      }]);
+      setNewTask('');
+    }
+  };
+
+  const deleteTask = (id) => {
+    setTasks(tasks.filter(task => task.id !== id));
+  };
+
+  const toggleComplete = (id) => {
+    setTasks(tasks.map(task =>
+      task.id === id ? { ...task, completed: !task.completed } : task
+    ));
+  };
+
+  const startEditing = (id, currentText) => {
+    setEditingText(currentText);
+    setTasks(tasks.map(task =>
+      task.id === id ? { ...task, editing: true } : { ...task, editing: false }
+    ));
+  };
+
+  const saveEdit = (id) => {
+    if (editingText.trim() !== '') {
+      setTasks(tasks.map(task =>
+        task.id === id ? { ...task, text: editingText, editing: false } : task
+      ));
+    }
+    setEditingText('');
+  };
+
+  const cancelEdit = (id) => {
+    setTasks(tasks.map(task =>
+      task.id === id ? { ...task, editing: false } : task
+    ));
+    setEditingText('');
+  };
+
+  const handleKeyPress = (e, action, id = null) => {
+    if (e.key === 'Enter') {
+      if (action === 'add') {
+        addTask();
+      } else if (action === 'save') {
+        saveEdit(id);
+      }
+    } else if (e.key === 'Escape' && action === 'save') {
+      cancelEdit(id);
+    }
+  };
+
+  const completedCount = tasks.filter(task => task.completed).length;
+  const totalCount = tasks.length;
+
+  return (
+    <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-xl shadow-lg">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Lista de Tarefas</h1>
+        <p className="text-sm text-gray-600">
+          {completedCount} de {totalCount} tarefas concluídas
+        </p>
+        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+          <div 
+            className="bg-green-500 h-2 rounded-full transition-all duration-300"
+            style={{ width: totalCount > 0 ? `${(completedCount / totalCount) * 100}%` : '0%' }}
+          ></div>
+        </div>
+      </div>
+
+      {/* Formulário para adicionar nova tarefa */}
+      <div className="flex gap-2 mb-6">
+        <input
+          type="text"
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          onKeyPress={(e) => handleKeyPress(e, 'add')}
+          placeholder="Digite uma nova tarefa..."
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <button
+          onClick={addTask}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+        >
+          <Plus size={20} />
+        </button>
+      </div>
+
+      {/* Lista de tarefas */}
+      <div className="space-y-2">
+        {tasks.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>Nenhuma tarefa ainda.</p>
+            <p className="text-sm">Adicione uma acima para começar!</p>
+          </div>
+        ) : (
+          tasks.map((task) => (
+            <div
+              key={task.id}
+              className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                task.completed
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+              }`}
+            >
+              {/* Checkbox para marcar como concluída */}
+              <button
+                onClick={() => toggleComplete(task.id)}
+                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                  task.completed
+                    ? 'bg-green-500 border-green-500 text-white'
+                    : 'border-gray-300 hover:border-green-400'
+                }`}
+              >
+                {task.completed && <Check size={12} />}
+              </button>
+
+              {/* Texto da tarefa ou campo de edição */}
+              <div className="flex-1">
+                {task.editing ? (
+                  <input
+                    type="text"
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    onKeyPress={(e) => handleKeyPress(e, 'save', task.id)}
+                    className="w-full px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    autoFocus
+                  />
+                ) : (
+                  <span
+                    className={`${
+                      task.completed
+                        ? 'line-through text-gray-500'
+                        : 'text-gray-800'
+                    }`}
+                  >
+                    {task.text}
+                  </span>
+                )}
+              </div>
+
+              {/* Botões de ação */}
+              <div className="flex gap-1">
+                {task.editing ? (
+                  <>
+                    <button
+                      onClick={() => saveEdit(task.id)}
+                      className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
+                      title="Salvar"
+                    >
+                      <Save size={16} />
+                    </button>
+                    <button
+                      onClick={() => cancelEdit(task.id)}
+                      className="p-1 text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                      title="Cancelar"
+                    >
+                      <X size={16} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => startEditing(task.id, task.text)}
+                      className="p-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                      title="Editar"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => deleteTask(task.id)}
+                      className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                      title="Excluir"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Rodapé com informações */}
+      {tasks.length > 0 && (
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>{tasks.filter(task => !task.completed).length} pendentes</span>
+            <span>{completedCount} concluídas</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
